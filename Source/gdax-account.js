@@ -1,53 +1,65 @@
-function getPrice() {
+function getEthPrice() {
   var priceElement = document.getElementsByClassName('MarketInfo_market-num_1lAXs')[0];
   if (!priceElement) { return 0; }
   var price = +priceElement.innerText.match(/[0-9\.]+/)[0];
   return price;
 }
 
-function getBalance() {
-  var balanceElement = document.getElementsByClassName('BalanceInfo_term-description_1UHsH')[1];
-  if (!balanceElement) { return 0; }
-  var balance = +balanceElement.innerText;
-  return balance;
+function getAccountMap() {
+  map = new Map();
+  map.set('USD', {});
+  map.set('ETH', {});
+  map.set('BTC', {});
+
+  var parent = document.getElementsByClassName('BalanceInfo_term-list_-3tTQ')[0];
+  if (!parent) { return map; }
+
+
+  parent.childNodes.forEach(function(li) {
+    var walletName = li.childNodes[0].innerText;
+    var walletBalanceSpan = li.childNodes[1].getElementsByTagName('span')[0];
+    var walletBalance = walletBalanceSpan.innerText;
+    var usdValueSpan = li.getElementsByClassName('usd-balance')[0];
+    if (map.has(walletName)) {
+      map.set(walletName, {
+        name: walletName,
+        currentPrice: getEthPrice(),
+        balance: walletBalance,
+        balanceSpan: walletBalanceSpan,
+        usdValueSpan: usdValueSpan,
+        parentSpan: li,
+      });
+    } else {
+      console.log('Unknown wallet: ' + walletName);
+    }
+  });
+
+  window.accountMap = map;
+  return map;
 }
 
-function findOrCreateElement() {
-  var headerSpan = document.getElementsByClassName('gdax-account-value');
-  if (headerSpan.length) { return headerSpan[0]; }
+function updateUSDValueForETH() {
 
-  var headerUl = document.getElementsByClassName('MarketInfo_market-info_3lkUj')[0];
+  var accountMap = getAccountMap();
 
-  var li = document.createElement('li');
+  var ethInfo = accountMap.get('ETH');
 
-  // create h4 element
-  var h4 = document.createElement('h4');
-  h4.classList.add('MarketInfo_market-stat_2xWig');
+  if (!Object.keys(ethInfo).length) { return; }
 
-  var headerSpan = document.createElement('span')
-  headerSpan.classList.add('MarketInfo_market-num_1lAXs');
-  headerSpan.classList.add('gdax-account-value');
+  var accountValue = (ethInfo.balance * ethInfo.currentPrice).toFixed(2);
 
-  var subSpan = document.createElement('span')
-  subSpan.classList.add('MarketInfo_market-descr_2lp4B');
-  subSpan.innerText = 'Total account value';
+  var usdValueSpan = ethInfo.usdValueSpan;
+  if (!usdValueSpan) {
+    usdValueSpan = document.createElement('span');
+    usdValueSpan.classList.add('usd-balance');
+    usdValueSpan.style.marginLeft = '5px';
+    ethInfo.parentSpan.appendChild(usdValueSpan)
+  }
 
-  h4.appendChild(headerSpan)
-  h4.appendChild(subSpan)
-
-  li.appendChild(h4);
-
-  headerUl.appendChild(li);
-
-  return headerSpan;
+  usdValueSpan.innerText = accountValue + ' USD';
 }
+
 
 window.setInterval(function() {
-  var newBalance = getPrice() * getBalance();
-  if (newBalance > 0) {
-    valueElement = findOrCreateElement();
-    console.log('Setting new balance: ' + newBalance);
-    valueElement.innerText = newBalance.toFixed(2) + " USD";
-  }
+  updateUSDValueForETH();
 }, 2000);
-
