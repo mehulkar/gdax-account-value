@@ -8,6 +8,10 @@
 1. Drag/drop the `Source/` directory into Google Chrome
 1. Go to https://gdax.com and refresh the page
 
+## Example
+
+![screenshot.png]
+
 ## TODO
 
 1. Publish to Chrome store?
