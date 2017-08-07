@@ -1,8 +1,22 @@
-function getEthPrice() {
+function getWalletPrice() {
   var priceElement = document.getElementsByClassName('MarketInfo_market-num_1lAXs')[0];
   if (!priceElement) { return 0; }
-  var price = +priceElement.innerText.match(/[0-9\.]+/)[0];
-  return price;
+
+  // parse just the number from the text (removing commas)
+  var priceString = priceElement.innerText.match(/[0-9\.,]+/)[0].replace(',', '');
+
+  // returna  number
+  return Number(priceString);
+}
+
+function getCurrentWallet() {
+  var wallets = Array.from(
+    document.querySelectorAll('.BalanceInfo_term-name_1snxS')
+  ).map(el => el.innerText);
+
+  // First element is always USD, so use the second one
+  // Should be BTC or ETH or LTC
+  return wallets[1];
 }
 
 function getAccountMap() {
@@ -14,7 +28,6 @@ function getAccountMap() {
   var parent = document.getElementsByClassName('BalanceInfo_term-list_-3tTQ')[0];
   if (!parent) { return map; }
 
-
   parent.childNodes.forEach(function(li) {
     var walletName = li.childNodes[0].innerText;
     var walletBalanceSpan = li.childNodes[1].getElementsByTagName('span')[0];
@@ -23,7 +36,7 @@ function getAccountMap() {
     if (map.has(walletName)) {
       map.set(walletName, {
         name: walletName,
-        currentPrice: getEthPrice(),
+        currentPrice: getWalletPrice(),
         balance: walletBalance,
         balanceSpan: walletBalanceSpan,
         usdValueSpan: usdValueSpan,
@@ -34,26 +47,26 @@ function getAccountMap() {
     }
   });
 
-  window.accountMap = map;
   return map;
 }
 
-function updateUSDValueForETH() {
+function updateUSDValueForWallet() {
 
   var accountMap = getAccountMap();
 
-  var ethInfo = accountMap.get('ETH');
+  var currentWallet = getCurrentWallet();
+  var walletInfo = accountMap.get(currentWallet);
 
-  if (!Object.keys(ethInfo).length) { return; }
+  if (!Object.keys(walletInfo).length) { return; }
 
-  var accountValue = (ethInfo.balance * ethInfo.currentPrice).toFixed(2);
+  var accountValue = (walletInfo.balance * walletInfo.currentPrice).toFixed(2);
 
-  var usdValueSpan = ethInfo.usdValueSpan;
+  var usdValueSpan = walletInfo.usdValueSpan;
   if (!usdValueSpan) {
     usdValueSpan = document.createElement('span');
     usdValueSpan.classList.add('usd-balance');
     usdValueSpan.style.marginLeft = '5px';
-    ethInfo.parentSpan.appendChild(usdValueSpan)
+    walletInfo.parentSpan.appendChild(usdValueSpan)
   }
 
   usdValueSpan.innerText = accountValue + ' USD';
@@ -61,5 +74,5 @@ function updateUSDValueForETH() {
 
 
 window.setInterval(function() {
-  updateUSDValueForETH();
+  updateUSDValueForWallet();
 }, 2000);
