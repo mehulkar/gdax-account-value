@@ -10,7 +10,7 @@
 
 ## Example
 
-![screenshot.png]
+![screenshot](screenshot.png)
 
 ## TODO
 
