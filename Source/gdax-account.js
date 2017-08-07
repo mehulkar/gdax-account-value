@@ -95,7 +95,7 @@ function updateUSDValueForWallet() {
   var currentWallet = getCurrentWallet();
   var walletInfo = accountMap.get(currentWallet);
 
-  if (!Object.keys(walletInfo).length) { return; }
+  if (!walletInfo || !Object.keys(walletInfo).length) { return; }
 
   var usdValueSpan = walletInfo.usdValueSpan;
   if (!usdValueSpan) {
