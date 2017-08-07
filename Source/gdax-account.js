@@ -1,3 +1,32 @@
+const accountMap = new Map();
+accountMap.set('USD', {});
+accountMap.set('ETH', {});
+accountMap.set('BTC', {});
+
+function updateTotal(total) {
+  var header = document.querySelector('.MarketInfo_market-info_3lkUj');
+
+  var totalValueSpan = header.querySelector('.usd-total-value .MarketInfo_market-num_1lAXs');
+
+  if (!totalValueSpan) {
+    var liTotal = document.createElement('li');
+    liTotal.classList.add('usd-total-value');
+    var subHeader = document.createElement('h4')
+    subHeader.classList.add('MarketInfo_market-stat_2xWig');
+    var totalValueSpan = document.createElement('span');
+    var span2 = document.createElement('span');
+    totalValueSpan.classList.add('MarketInfo_market-num_1lAXs');
+    span2.classList.add('MarketInfo_market-descr_2lp4B');
+    span2.innerText = 'Total Account Value';
+    subHeader.appendChild(totalValueSpan);
+    subHeader.appendChild(span2);
+    liTotal.appendChild(subHeader);
+    header.appendChild(liTotal);
+  }
+
+  totalValueSpan.innerText = `${total} USD`;
+}
+
 function getWalletPrice() {
   var priceElement = document.getElementsByClassName('MarketInfo_market-num_1lAXs')[0];
   if (!priceElement) { return 0; }
@@ -19,47 +48,54 @@ function getCurrentWallet() {
   return wallets[1];
 }
 
-function getAccountMap() {
-  map = new Map();
-  map.set('USD', {});
-  map.set('ETH', {});
-  map.set('BTC', {});
+function updateAccountMap() {
+  var parent = document.querySelector('.BalanceInfo_term-list_-3tTQ');
 
-  var parent = document.getElementsByClassName('BalanceInfo_term-list_-3tTQ')[0];
-  if (!parent) { return map; }
+  if (!parent) { return accountMap; }
 
   parent.childNodes.forEach(function(li) {
-    var walletName = li.childNodes[0].innerText;
     var walletBalanceSpan = li.childNodes[1].getElementsByTagName('span')[0];
-    var walletBalance = walletBalanceSpan.innerText;
     var usdValueSpan = li.getElementsByClassName('usd-balance')[0];
-    if (map.has(walletName)) {
-      map.set(walletName, {
+
+    var walletName = li.childNodes[0].innerText;
+    var walletBalance = walletBalanceSpan.innerText;
+
+    if (accountMap.has(walletName)) {
+      var currentPrice = getWalletPrice();
+
+      var accountValue;
+
+      if (walletName === 'USD') {
+        accountValue = walletBalance.replace(',', '')
+      } else {
+        accountValue = (walletBalance * currentPrice).toFixed(2);
+      }
+
+      accountMap.set(walletName, {
         name: walletName,
-        currentPrice: getWalletPrice(),
-        balance: walletBalance,
         balanceSpan: walletBalanceSpan,
         usdValueSpan: usdValueSpan,
         parentSpan: li,
+        currentPrice: getWalletPrice(),
+        balance: Number(walletBalance),
+        accountValue: Number(accountValue),
       });
     } else {
       console.log('Unknown wallet: ' + walletName);
     }
   });
 
-  return map;
+  return accountMap;
 }
 
 function updateUSDValueForWallet() {
 
-  var accountMap = getAccountMap();
+  var accountMap = updateAccountMap();
 
   var currentWallet = getCurrentWallet();
   var walletInfo = accountMap.get(currentWallet);
 
   if (!Object.keys(walletInfo).length) { return; }
-
-  var accountValue = (walletInfo.balance * walletInfo.currentPrice).toFixed(2);
 
   var usdValueSpan = walletInfo.usdValueSpan;
   if (!usdValueSpan) {
@@ -69,7 +105,19 @@ function updateUSDValueForWallet() {
     walletInfo.parentSpan.appendChild(usdValueSpan)
   }
 
-  usdValueSpan.innerText = accountValue + ' USD';
+  usdValueSpan.innerText = walletInfo.accountValue + ' USD';
+
+  updateTotalValue(accountMap);
+}
+
+function updateTotalValue(accountMap) {
+  var total = Array.from(accountMap.values())
+                    .map(x => x.accountValue)
+                    .filter(x => x)
+                    .reduce((sum, x) => sum + x)
+                    .toFixed(2);
+
+  updateTotal(total);
 }
 
 
